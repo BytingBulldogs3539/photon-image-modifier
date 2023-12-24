@@ -19,6 +19,8 @@ jobs:
             script: ./install_limelight.sh
             base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2023-12-11/2023-12-11-raspios-bookworm-arm64-lite.img.xz
           - name: raspi
+            cpu: cortex-a7
+            cpu_info: cpuinfo/raspberrypi_4b
             script: ./install_pi.sh
             base_image: https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2023-12-11/2023-12-11-raspios-bookworm-arm64-lite.img.xz
           - name: opi5
@@ -39,15 +41,17 @@ jobs:
       with:
         image_additional_mb: 1500
         base_image: ${{ matrix.base_image }}
+        cpu: ${{ matrix.cpu }}
+        cpu_info: ${{ matrix.cpu_info }}
+        optimize_image: yes
         commands: ${{ matrix.script }}
 
     - name: Compress built image
       run: |
-        export IMAGE=photonvision_$(git describe --tags --match=v*)_${{ matrix.name }}.img
-        mv ${{ steps.install_deps.outputs.image }} $RUNNER_TEMP/$IMAGE
-        tar -cJf $IMAGE.tar.xz $RUNNER_TEMP/$IMAGE
+        mv ${{ steps.arm_runner_install.outputs.image }} photonvision_$(git describe --tags --match=v*)_${{ matrix.name }}.img
+        sudo xz -T 0 -v photonvision_$(git describe --tags --match=v*)_${{ matrix.name }}.img
 
     - uses: actions/upload-artifact@master
       with:
-        name: photon-image-${{ matrix.name }}
-        path: "*.tar.xz"
+        name: photonvision_$(git describe --tags --match=v*)_${{ matrix.name }}.img
+        path: photonvision_$(git describe --tags --match=v*)_${{ matrix.name }}.img
